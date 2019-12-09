@@ -21,6 +21,10 @@ func initLogger() {
 	log.SetLevel(log.InfoLevel)
 }
 
+function initAsnDB() {
+
+}
+
 func queryAsnOrg(w http.ResponseWriter, r *http.Request) {
 	org := mux.Vars(r)["org"]
 	log.Infof("Querying ASN for organization: ", org)
