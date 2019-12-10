@@ -18,9 +18,6 @@ import (
 const apiName = "asn-search-api"
 const apiVersion = "0.1.0"
 
-const listenHost = "0.0.0.0"
-const listenPort = 8000
-
 const (
 	TYPE_IPv4 = "ipv4"
 	TYPE_IPv6 = "ipv6"
@@ -51,6 +48,21 @@ var pFile = flag.String("file", "", "Input CSV file path from MaxMind")
 const AsnDBPath = "data/asn.db"
 
 var AsnDB *bleve.Index
+
+func getListenerString() string {
+	host, hb := os.LookupEnv("HOST")
+	port, pb := os.LookupEnv("PORT")
+
+	if !pb {
+		port = "8000"
+	}
+
+	if !hb {
+		host = "0.0.0.0"
+	}
+
+	return fmt.Sprintf("%s:%s", host, port)
+}
 
 func initLogger() {
 	log.SetFormatter(&log.JSONFormatter{})
@@ -173,6 +185,6 @@ func main() {
 	r.HandleFunc("/domain/{domain}", queryAsnDomainHandler)
 	r.HandleFunc("/org/{org}", queryAsnOrgHandler)
 
-	log.Infof("Starting HTTP server on %s:%d", listenHost, listenPort)
-	http.ListenAndServe(fmt.Sprintf("%s:%d", listenHost, listenPort), r)
+	log.Infof("Starting HTTP server on %s", getListenerString())
+	http.ListenAndServe(getListenerString(), r)
 }
