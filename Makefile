@@ -1,5 +1,5 @@
 all:
-	go build -o asn-search-api main.go
+	go build -o asn-search-api
 
 .PHONY: clean
 clean:

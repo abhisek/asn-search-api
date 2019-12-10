@@ -16,3 +16,6 @@
 
 # Generated binary
 asn-search-api
+
+# Generated database
+data/asn.db
