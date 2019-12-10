@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/blevesearch/bleve"
 	log "github.com/sirupsen/logrus"
@@ -60,7 +59,25 @@ func createIndexedAsnDB(pDB, pType, pFile *string) {
 
 	log.Infof("Indexing records to DB: %s", *pDB)
 
-	var wg sync.WaitGroup
+	// var wg sync.WaitGroup
+	// channel := make(chan *AsnRecord)
+
+	// // Start the indexers
+	// for i := 0; i < 10; i++ {
+	// 	wg.Add(1)
+	// 	go func(c chan *AsnRecord, workerId int) {
+	// 		defer wg.Done()
+
+	// 		log.Infof("Indexer worker running: %d", workerId)
+	// 		for r := range c {
+	// 			riID := getRecordIndexID(r)
+	// 			if err := index.Index(riID, r); err != nil {
+	// 				log.Fatalf("Failed to index record. Error: %+v", err)
+	// 			}
+	// 		}
+	// 	}(channel, i)
+	// }
+
 	for scanner.Scan() {
 		parts := strings.Split(scanner.Text(), ",")
 		record := AsnRecord{ID: parts[1],
@@ -68,20 +85,27 @@ func createIndexedAsnDB(pDB, pType, pFile *string) {
 			Organization: removeQuotes(parts[2]),
 			Type:         *pType}
 
-		wg.Add(1)
-		go func(r *AsnRecord) {
-			defer wg.Done()
+		riID := getRecordIndexID(&record)
+		index.Index(riID, record)
 
-			riID := getRecordIndexID(r)
-			log.Infof("Indexing record with ASNID: %s ID: %s", r.ID, riID)
+		// wg.Add(1)
+		// go func(r *AsnRecord) {
+		// 	defer wg.Done()
 
-			if err := index.Index(riID, r); err != nil {
-				log.Fatalf("Failed to index record. Error: %+v", err)
-			}
-		}(&record)
+		// 	riID := getRecordIndexID(r)
+		// 	log.Infof("Indexing record with ASNID: %s ID: %s", r.ID, riID)
+
+		// 	if err := index.Index(riID, r); err != nil {
+		// 		log.Fatalf("Failed to index record. Error: %+v", err)
+		// 	}
+		// }(&record)
+
+		// channel <- &record
 		count = count + 1
 	}
 
-	wg.Wait()
+	// close(channel)
+	// wg.Wait()
+
 	log.Infof("Indexed %d entries", count)
 }
