@@ -16,25 +16,20 @@ import (
 func isValidType(pType string) bool {
 	if (pType == TYPE_IPv4) || (pType == TYPE_IPv6) {
 		return true
-	} else {
-		return false
 	}
+
+	return false
 }
 
 func getRecordIndexID(r *AsnRecord) string {
 	h := sha1.New()
-	h.Write([]byte(fmt.Sprint("%s_%s", r.ID, r.Address)))
+	h.Write([]byte(fmt.Sprintf("%s_%s", r.ID, r.Address)))
 
 	return hex.EncodeToString(h.Sum(nil))
 }
 
 func removeQuotes(s string) string {
-	if len(s) >= 2 {
-		if s[0] == '"' && s[len(s)-1] == '"' {
-			return s[1 : len(s)-1]
-		}
-	}
-	return s
+	return strings.ReplaceAll(s, "\"", "")
 }
 
 func createIndexedAsnDB(pDB, pType, pFile *string) {
@@ -74,16 +69,16 @@ func createIndexedAsnDB(pDB, pType, pFile *string) {
 			Type:         *pType}
 
 		wg.Add(1)
-		go func(r *AsnRecord, id int) {
+		go func(r *AsnRecord) {
 			defer wg.Done()
 
-			riID := getRecordIndexID(&record)
-			log.Infof("Indexing record with ASNID: %s ID: %s", record.ID, riID)
+			riID := getRecordIndexID(r)
+			log.Infof("Indexing record with ASNID: %s ID: %s", r.ID, riID)
 
 			if err := index.Index(riID, r); err != nil {
 				log.Fatalf("Failed to index record. Error: %+v", err)
 			}
-		}(&record, count+1)
+		}(&record)
 		count = count + 1
 	}
 

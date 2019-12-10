@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
@@ -96,10 +97,10 @@ func queryAsnByOrgName(name string) []AsnRecord {
 		doc, _ := (*AsnDB).Document(hit.ID)
 
 		r := AsnRecord{}
-		r.ID = getFieldValue(doc.Fields, "ID")
-		r.Address = getFieldValue(doc.Fields, "Address")
-		r.Organization = getFieldValue(doc.Fields, "Organization")
-		r.Type = getFieldValue(doc.Fields, "Type")
+		r.ID = getFieldValue(doc.Fields, "id")
+		r.Address = getFieldValue(doc.Fields, "address")
+		r.Organization = getFieldValue(doc.Fields, "organization")
+		r.Type = getFieldValue(doc.Fields, "type")
 
 		// for _, field := range doc.Fields {
 		// 	fmt.Printf("Name: %s Value: %s\n", field.Name(), field.Value())
@@ -146,7 +147,7 @@ func queryAsnDomainHandler(w http.ResponseWriter, r *http.Request) {
 	domain, _ := url.QueryUnescape(mux.Vars(r)["domain"])
 	log.Info("Querying ASN for domain: ", domain)
 
-	org := "" // Get org from domain
+	org := strings.Split(domain, ".")[0]
 	executeAsnQueryByOrg(org, w, r)
 }
 
