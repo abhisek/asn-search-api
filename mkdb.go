@@ -102,6 +102,10 @@ func createIndexedAsnDB(pDB, pType, pFile *string) {
 
 		// channel <- &record
 		count = count + 1
+
+		if (count % 10000) == 0 {
+			log.Infof("Indexed %d records", count)
+		}
 	}
 
 	// close(channel)
