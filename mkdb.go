@@ -2,6 +2,9 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha1"
+	"encoding/hex"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -16,6 +19,22 @@ func isValidType(pType string) bool {
 	} else {
 		return false
 	}
+}
+
+func getRecordIndexID(r *AsnRecord) string {
+	h := sha1.New()
+	h.Write([]byte(fmt.Sprint("%s_%s", r.ID, r.Address)))
+
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+func removeQuotes(s string) string {
+	if len(s) >= 2 {
+		if s[0] == '"' && s[len(s)-1] == '"' {
+			return s[1 : len(s)-1]
+		}
+	}
+	return s
 }
 
 func createIndexedAsnDB(pDB, pType, pFile *string) {
@@ -51,18 +70,20 @@ func createIndexedAsnDB(pDB, pType, pFile *string) {
 		parts := strings.Split(scanner.Text(), ",")
 		record := AsnRecord{ID: parts[1],
 			Address:      parts[0],
-			Organization: parts[2],
+			Organization: removeQuotes(parts[2]),
 			Type:         *pType}
 
 		wg.Add(1)
-		go func(r *AsnRecord) {
+		go func(r *AsnRecord, id int) {
 			defer wg.Done()
-			log.Infof("Indexing record with ID: %s", record.ID)
-			if err := index.Index(r.ID, r); err != nil {
+
+			riID := getRecordIndexID(&record)
+			log.Infof("Indexing record with ASNID: %s ID: %s", record.ID, riID)
+
+			if err := index.Index(riID, r); err != nil {
 				log.Fatalf("Failed to index record. Error: %+v", err)
 			}
-		}(&record)
-
+		}(&record, count+1)
 		count = count + 1
 	}
 

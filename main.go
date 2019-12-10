@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/document"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -66,10 +67,23 @@ func initAsnDB() {
 	AsnDB = &db
 }
 
+func getFieldValue(fields []document.Field, name string) string {
+	var ret string
+
+	for _, f := range fields {
+		if f.Name() == name {
+			ret = string(f.Value())
+			break
+		}
+	}
+
+	return ret
+}
+
 func queryAsnByOrgName(name string) []AsnRecord {
 	results := make([]AsnRecord, 0)
 
-	query := bleve.NewQueryStringQuery(name)
+	query := bleve.NewMatchQuery(name)
 	searchRequest := bleve.NewSearchRequest(query)
 	searchResult, err := (*AsnDB).Search(searchRequest)
 
@@ -79,13 +93,17 @@ func queryAsnByOrgName(name string) []AsnRecord {
 	}
 
 	for _, hit := range searchResult.Hits {
-		r := AsnRecord{}
-		r.ID = hit.ID
-		// r.Address = hit.Fragments["Address"][0]
-		// r.Organization = hit.Fragments["Organization"][0]
-		// r.Type = hit.Fragments["Type"][0]
+		doc, _ := (*AsnDB).Document(hit.ID)
 
-		log.Infof("F: %#v", hit.Fragments)
+		r := AsnRecord{}
+		r.ID = getFieldValue(doc.Fields, "ID")
+		r.Address = getFieldValue(doc.Fields, "Address")
+		r.Organization = getFieldValue(doc.Fields, "Organization")
+		r.Type = getFieldValue(doc.Fields, "Type")
+
+		// for _, field := range doc.Fields {
+		// 	fmt.Printf("Name: %s Value: %s\n", field.Name(), field.Value())
+		// }
 
 		results = append(results, r)
 	}
@@ -93,13 +111,10 @@ func queryAsnByOrgName(name string) []AsnRecord {
 	return results
 }
 
-func queryAsnOrg(w http.ResponseWriter, r *http.Request) {
-	org, err := url.QueryUnescape(mux.Vars(r)["org"])
-	log.Infof("Querying ASN for organization: %s", org)
-
+func executeAsnQueryByOrg(org string, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	if err != nil {
+	if len(org) <= 0 {
 		res := ErrorResponse{Error: "error", Message: "Input param invalid"}
 		json, _ := json.Marshal(res)
 
@@ -120,15 +135,19 @@ func queryAsnOrg(w http.ResponseWriter, r *http.Request) {
 	w.Write(json)
 }
 
-func queryAsnDomain(w http.ResponseWriter, r *http.Request) {
-	domain, err := url.QueryUnescape(mux.Vars(r)["domain"])
+func queryAsnOrgHandler(w http.ResponseWriter, r *http.Request) {
+	org, _ := url.QueryUnescape(mux.Vars(r)["org"])
+	log.Infof("Querying ASN for organization: %s", org)
+
+	executeAsnQueryByOrg(org, w, r)
+}
+
+func queryAsnDomainHandler(w http.ResponseWriter, r *http.Request) {
+	domain, _ := url.QueryUnescape(mux.Vars(r)["domain"])
 	log.Info("Querying ASN for domain: ", domain)
 
-	w.Header().Set("Content-Type", "application/json")
-
-	if err != nil {
-		// Return error JSON
-	}
+	org := "" // Get org from domain
+	executeAsnQueryByOrg(org, w, r)
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -150,8 +169,8 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", indexHandler)
-	r.HandleFunc("/domain/{domain}", queryAsnDomain)
-	r.HandleFunc("/org/{org}", queryAsnOrg)
+	r.HandleFunc("/domain/{domain}", queryAsnDomainHandler)
+	r.HandleFunc("/org/{org}", queryAsnOrgHandler)
 
 	log.Infof("Starting HTTP server on %s:%d", listenHost, listenPort)
 	http.ListenAndServe(fmt.Sprintf("%s:%d", listenHost, listenPort), r)
