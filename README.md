@@ -63,5 +63,5 @@ gcloud run deploy \
 
 ## TODO
 
-- [] Extract ASN DB ops from `main.go` and create its own package
-- [] Test cases
+- [ ] Extract ASN DB ops from `main.go` and create its own package
+- [ ] Test cases
