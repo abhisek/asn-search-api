@@ -1,6 +1,8 @@
 # ASN Search API
 A Golang API over MaxMind ASN database
 
+[![CircleCI](https://circleci.com/gh/abhisek/asn-search-api.svg?style=svg)](https://circleci.com/gh/abhisek/asn-search-api)
+
 * The API server requires a pre-built database in `data/asn.db`
 * The API server listens on `0.0.0.0:8000` by default (Customize with `HOST` and `PORT` environment variable)
 * Building database requires [MaxMind ASN CSV](https://dev.maxmind.com/geoip/geoip2/geolite2-asn-csv-database/)
