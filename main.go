@@ -16,7 +16,8 @@ import (
 )
 
 const apiName = "asn-search-api"
-const apiVersion = "0.1.0"
+const apiVersion = "0.2.0"
+const maxSearchResult = 1000
 
 const (
 	TYPE_IPv4 = "ipv4"
@@ -97,7 +98,10 @@ func queryAsnByOrgName(name string) []AsnRecord {
 	results := make([]AsnRecord, 0)
 
 	query := bleve.NewMatchQuery(name)
+
 	searchRequest := bleve.NewSearchRequest(query)
+	searchRequest.Size = maxSearchResult
+
 	searchResult, err := (*AsnDB).Search(searchRequest)
 
 	if err != nil {
