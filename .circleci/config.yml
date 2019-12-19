@@ -1,0 +1,16 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12
+
+    # We are using go mod so we use a directory outside GOROOT
+    working_directory: /app/asn-search-api
+    steps:
+      - checkout
+      - run: go get -v
+      - run: go build -v
+
