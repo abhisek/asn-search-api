@@ -8,7 +8,7 @@ jobs:
       - image: circleci/golang:1.12
 
     # We are using go mod so we use a directory outside GOROOT
-    working_directory: /app/asn-search-api
+    working_directory: ~/app/asn-search-api
     steps:
       - checkout
       - run: go get -v
